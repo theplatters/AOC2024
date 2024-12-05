@@ -17,30 +17,28 @@
      (cons (first lst) (take-while pred (rest lst)))] ; Include the element and recurse
     [else '()]))                       ; If the predicate fails, stop and return the result
 
-(define (rules_to_map l)
-  (rules_to_map_h l (hash)))
-
-(define (rules_to_map_h l h)
+(define (rules_to_map ls)
+  (letrec ([rh (lambda (l h)
   (match l 
-    [(cons x xs) (rules_to_map_h xs (if (hash-has-key? h (second x))
+    [(cons x xs) (rh xs (if (hash-has-key? h (second x))
                                                         (hash-set h (second x) (cons (first x) (hash-ref h (second x))))
                                                         (hash-set h (second x) (list (first x)))))]
-    [_ h]))
+    [_ h]))]) (rh ls (hash))))
 
 (define (middle-element lst)
   (list-ref lst (quotient (length lst) 2)))
 
 (define (check-rules sequence rules)
-  (let loop ([seq sequences])
+  (letrec ([loop (lambda (seq rules)
     (match seq
       [(cons x xs)
        (if (hash-has-key? rules x)
            (let ([rule-values (hash-ref rules x)])
              (if (any-in? xs rule-values)
                  #f
-                 (loop xs)))
+                 (loop xs rules)))
            (loop xs))]
-      [_ #t]))) ; Base case: no more elements, return #t
+      [_ #t]))]) (loop sequence rules))) ; Base case: no more elements, return #t
 
 (define lines (read-file-line-by-line "input5.txt"))
 
@@ -53,4 +51,3 @@
      (map (lambda (n) (string-split n ","))  (take-while (lambda (n) (not (string=? "" n))) (reverse lines)))))
 
 (foldl + 0 (map middle-element (filter (lambda (n) (check-rules n rules-map))  sequences)))
-(if (any-in? '(1 2 3) '(3 4 5)) #t #f)
