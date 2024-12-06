@@ -19,6 +19,7 @@
      (cons (first lst) (take-while pred (rest lst)))] ; Include the element and recurse
     [else '()]))                       ; If the predicate fails, stop and return the result
 
+;PART 1
 (define (rules_to_map ls)
   (letrec ([rh (lambda (l h)
   (match l 
@@ -40,16 +41,21 @@
                  (loop xs rules)))]
       [_ #t]))]) (loop sequence rules))) ; Base case: no more elements, return #t
 
-(define lines (read-file-line-by-line "input5.txt"))
 
-;PART 1
-(define rules (map (compose rest (lambda (n) (map string->number n)))
+
+(define rules-map 
+  (let* 
+    ([file-content (read-file-line-by-line "input5.txt")]
+     [rules (map (compose rest (lambda (n) (map string->number n)))
             (map (lambda (n)
-                   (regexp-match #px"(\\d+)\\|(\\d+)" n )) (take-while (lambda (n) (not (string=? "" n))) (read-file-line-by-line "input5.txt")))))
+              (regexp-match #px"(\\d+)\\|(\\d+)" n )) (take-while (lambda (n) (not (string=? "" n))) file-content)))]) 
+  (rules_to_map rules)))
 
-(define rules-map (rules_to_map rules))
-(define sequences (map (lambda (n) (map string->number n)) 
-     (map (lambda (n) (string-split n ","))  (take-while (lambda (n) (not (string=? "" n))) (reverse lines)))))
+(define sequences 
+  (let* 
+    ([file-content (read-file-line-by-line "input5.txt")]
+     [sequences-str (map (lambda (n) (string-split n ","))  (take-while (lambda (n) (not (string=? "" n))) (reverse file-content)))])
+    (map (lambda (n) (map string->number n)) sequences-str)))
 
 (foldl + 0 (map middle-element (filter (lambda (n) (check-rules n rules-map)) sequences)))
 
