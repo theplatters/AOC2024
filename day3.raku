@@ -1,14 +1,5 @@
-my $fh = open "input3.txt", :r;
-my $contents = $fh.slurp;
-$fh.close;
-
-my regex mul {
-  'mul('
-  \d+
-  ','
-  \d+
-  ')'
-}
+my $contents = "input3.txt".IO.slurp;
+my regex mul {'mul('\d+','\d+')'}
 my @matches = $contents.comb(&mul);
 
 grammar Calculator {
@@ -32,7 +23,6 @@ for @matches {
 
 put $sum;
 
-
 # =============================
 #          Part 2
 # =============================
@@ -48,8 +38,6 @@ grammar BetterCalculator{
 }
 
 class BetterCalculations {
-
-
     method TOP              ($/) { make $<command>.made; }
     method command:sym<mul> ($/) {if $active {make [*] $<num>;} else {make 0;} }
     method command:sym<activate> ($/) {$active = True; make 0;}

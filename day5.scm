@@ -1,4 +1,6 @@
 #lang racket
+
+(require racket/list)
 (define (read-file-line-by-line filename)
   (with-input-from-file filename
     (lambda ()
@@ -51,3 +53,9 @@
      (map (lambda (n) (string-split n ","))  (take-while (lambda (n) (not (string=? "" n))) (reverse lines)))))
 
 (foldl + 0 (map middle-element (filter (lambda (n) (check-rules n rules-map))  sequences)))
+
+(define (sort-sequence a b rules)
+  (not (memv b (hash-ref rules a '()))))
+
+(foldl + 0 (map middle-element (map (lambda (seq) (sort seq (lambda (a b) (sort-sequence a b rules-map)))) (filter (lambda (n) (not (check-rules n rules-map)))  sequences))))
+
