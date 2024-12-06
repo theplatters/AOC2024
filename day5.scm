@@ -34,16 +34,15 @@
   (letrec ([loop (lambda (seq rules)
     (match seq
       [(cons x xs)
-       (if (hash-has-key? rules x)
-           (let ([rule-values (hash-ref rules x)])
+          (let ([rule-values (hash-ref rules x '())])
              (if (any-in? xs rule-values)
                  #f
-                 (loop xs rules)))
-           (loop xs))]
+                 (loop xs rules)))]
       [_ #t]))]) (loop sequence rules))) ; Base case: no more elements, return #t
 
 (define lines (read-file-line-by-line "input5.txt"))
 
+;PART 1
 (define rules (map (compose rest (lambda (n) (map string->number n)))
             (map (lambda (n)
                    (regexp-match #px"(\\d+)\\|(\\d+)" n )) (take-while (lambda (n) (not (string=? "" n))) (read-file-line-by-line "input5.txt")))))
@@ -52,10 +51,13 @@
 (define sequences (map (lambda (n) (map string->number n)) 
      (map (lambda (n) (string-split n ","))  (take-while (lambda (n) (not (string=? "" n))) (reverse lines)))))
 
-(foldl + 0 (map middle-element (filter (lambda (n) (check-rules n rules-map))  sequences)))
+(foldl + 0 (map middle-element (filter (lambda (n) (check-rules n rules-map)) sequences)))
+
+;PART 2
 
 (define (sort-sequence a b rules)
   (not (memv b (hash-ref rules a '()))))
 
-(foldl + 0 (map middle-element (map (lambda (seq) (sort seq (lambda (a b) (sort-sequence a b rules-map)))) (filter (lambda (n) (not (check-rules n rules-map)))  sequences))))
+(let ([failed-sequences (filter (lambda (n) (not (check-rules n rules-map)))  sequences)])
+  (foldl + 0 (map (compose middle-element (lambda (seq) (sort seq (lambda (a b) (sort-sequence a b rules-map))))) failed-sequences )))
 
