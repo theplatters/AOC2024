@@ -16,6 +16,30 @@ let is_number s = match int_of_string_opt s with
 
 let combine a b = int_of_string ((string_of_int a) ^ (string_of_int b))
 
+let mag n =
+  let rec loop n factor =
+    if n < 10 then factor
+    else loop (n / 10) (factor * 10)
+  in
+  loop n 10
+;;
+
+let digits2 d =
+    let rec dig acc d =
+        if d < 10 then d::acc
+        else dig ((d mod 10)::acc) (d/10) in
+    List.rev (dig [] d)
+
+let contains_digit a b = 
+  let rec is_sublist da db =
+  match da, db with 
+    | [], _ -> false 
+    | _ , [] -> true 
+    | x :: xs, y :: ys when x <> y -> false
+    | x :: xs, y :: ys -> is_sublist xs ys
+  in
+  is_sublist (digits2 a) (digits2 b)
+
 (* Part 1 *)
 let check_if_doable goal numbers  =
   let rec check_if_doable' curr l = 
@@ -31,19 +55,14 @@ let check_if_doable goal numbers  =
 
 (* Part 2*)
 let check_if_doable2 goal numbers =
-  let rec check_if_doable2' curr l =
-    let result = check_if_doable curr l in 
-    if result then result else
-    match l with 
-    | x :: y :: [] when (combine y x) = curr -> true
-    | x :: _ when curr <= 0 -> result
-    | x :: y :: xs when (x mod curr) = 0 -> check_if_doable2' curr ([combine y x] @ xs) || check_if_doable2' (curr - x) ([y] @ xs) || check_if_doable2' (curr / x) ([y] @ xs)
-    | x :: y :: xs -> check_if_doable2' curr ([combine y x] @ xs) || check_if_doable2' (curr - x) ([y] @ xs)  
-    | _ -> check_if_doable curr l
-  in
-  check_if_doable2' goal (List.rev numbers)
-
-
+  let rec check_if_doable2' curr l = match l with
+    | [] -> false
+    | x :: [] when x = curr -> true
+    | x :: [] -> false
+    | x :: xs when curr < 0 -> false
+    | x :: xs when (curr mod x) = 0 -> check_if_doable2' (curr - x) xs || check_if_doable2' (curr / x) xs || if contains_digit curr x then check_if_doable2' ((curr  - x)/(mag x)) xs else false
+    | x :: xs ->  check_if_doable2' (curr - x) xs ||  if contains_digit curr x then check_if_doable2' ((curr  - x)/(mag x)) xs else false in
+   check_if_doable2' goal (List.rev numbers)
 
 let () =
   let content = read_lines file in 
@@ -53,4 +72,4 @@ let () =
   let zipped = List.map2 (fun x y -> [y] @ x) operations result in 
   let res2 = (List.map List.hd (List.filter (fun x -> check_if_doable2 (List.hd x) (List.tl x)) zipped)) in
   let res = (List.map List.hd (List.filter (fun x -> check_if_doable (List.hd x) (List.tl x)) zipped)) in
-  (printf "Part 1; %d %d") (List.fold_left (+) 0 res)  (List.fold_left (+) 0 res2)
+  (printf "Part 1; %d %d %d" ) (List.fold_left (+) 0 res)  (List.fold_left (+) 0 res2) ((1234 - 34)/ mag 34);;
