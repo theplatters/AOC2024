@@ -88,13 +88,13 @@ pub fn main() !void {
     var starting_direction = Vec2{ .x = 0, .y = 0 };
     var starting_position = Index{ .x = 0, .y = 0 };
 
-    for (charGrid, 0..) |line, index_y| {
+    outer: for (charGrid, 0..) |line, index_y| {
         for (line, 0..) |c, index_x| {
             if (c == '^') {
                 starting_direction.y = -1;
                 starting_position.x = index_x;
                 starting_position.y = index_y;
-                break;
+                break :outer;
             }
         }
     }
@@ -127,10 +127,10 @@ pub fn main() !void {
     var visitedWhileWalking = std.ArrayList(Index).init(allocator);
     var visitedDirectionWhileWalking = std.ArrayList(Vec2).init(allocator);
     var endless_loop: u32 = 0;
+    charGrid = unchangedGrid;
     for (visited.items) |value| {
         position = starting_position;
         direction = starting_direction;
-        charGrid = unchangedGrid;
         charGrid[value.y][value.x] = '#';
 
         while (position.x > 0 and position.y > 0 and position.x < maxLineLength and position.y < maxLines) {
@@ -158,8 +158,14 @@ pub fn main() !void {
             }
         }
 
+        charGrid[value.y][value.x] = '.';
         visitedWhileWalking.clearRetainingCapacity();
         visitedDirectionWhileWalking.clearRetainingCapacity();
     }
     std.debug.print("\n \n {d}", .{endless_loop});
+
+    visitedWhileWalking.deinit();
+    visitedDirection.deinit();
+    visited.deinit();
+    visitedDirectionWhileWalking.deinit();
 }
