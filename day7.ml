@@ -47,7 +47,7 @@ let check_if_doable goal numbers  =
     | [] -> false
     | x :: [] when x = curr -> true
     | x :: [] -> false
-    | x :: xs when curr < 0 -> false
+    | x :: xs when curr <= x -> false
     | x :: xs when (curr mod x) = 0 -> (check_if_doable' (curr - x) xs || check_if_doable' (curr / x) xs) 
     | x :: xs ->  check_if_doable' (curr - x) xs in
   check_if_doable' goal (List.rev numbers) 
@@ -59,7 +59,7 @@ let check_if_doable2 goal numbers =
     | [] -> false
     | x :: [] when x = curr -> true
     | x :: [] -> false
-    | x :: xs when curr < 0 -> false
+    | x :: xs when curr <= 0 -> false
     | x :: xs when (curr mod x) = 0 -> check_if_doable2' (curr - x) xs || check_if_doable2' (curr / x) xs || if contains_digit curr x then check_if_doable2' ((curr  - x)/(mag x)) xs else false
     | x :: xs ->  check_if_doable2' (curr - x) xs ||  if contains_digit curr x then check_if_doable2' ((curr  - x)/(mag x)) xs else false in
    check_if_doable2' goal (List.rev numbers)
