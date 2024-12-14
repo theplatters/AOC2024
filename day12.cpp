@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <array>
 #include <cstddef>
 #include <cstring>
@@ -5,6 +6,7 @@
 #include <iostream>
 #include <map>
 #include <numeric>
+#include <ranges>
 #include <set>
 #include <stdexcept>
 #include <vector>
@@ -13,6 +15,12 @@
 #define NCOLS 140
 
 using Par = std::pair<int, int>;
+
+Par add(Par a, Par b) { return Par(a.first + b.first, a.second + b.second); }
+bool inbounds(Par &a) {
+  auto condition = [](int x) { return x >= 0 && x < NCOLS; };
+  return condition(a.first) && condition(a.second);
+}
 
 class Graph {
 
@@ -44,14 +52,58 @@ public:
     }
     return sum;
   }
+
+  int sides() {
+    std::set<Par> visited;
+    auto minimum = *vertices.begin();
+    auto maximum = *vertices.rbegin();
+    int side_number = 0;
+    std::vector<Par> intersections;
+    for (int i = minimum.first; i <= maximum.first; i++) {
+      auto filtered = vertices | std::views::filter([i](const auto &p) {
+                        return p.first == i;
+                      });
+
+      // Convert the filtered view to a vector
+      std::ranges::copy(filtered, std::inserter(visited, visited.end()));
+
+      for (const auto &p : visited) {
+        auto next = add(p, Par(0, 1));
+        auto prev = add(p, Par(0, -1));
+        if (!visited.contains(prev)) {
+          intersections.push_back(p);
+        }
+        if (!visited.contains(next)) {
+          intersections.push_back(next);
+        }
+      }
+      visited.clear();
+    }
+
+    std::sort(intersections.begin(), intersections.end(),
+              [](auto &left, auto &right) {
+                return left.second < right.second ||
+                       (left.second == right.second &&
+                        left.first < right.first);
+              });
+
+    auto curr = Par(-10, -10);
+    std::vector<Par> sides;
+    for (const auto &par : intersections) {
+      curr = add(curr, Par(1, 0));
+      if (par != curr) {
+        sides.push_back(par);
+        curr = par;
+      }
+    }
+
+    for (const auto &side : sides) {
+      std::cout << side.first << " " << side.second << "\n";
+    }
+    // Print the results
+    return 0;
+  }
 };
-
-bool inbounds(Par &a) {
-  auto condition = [](int x) { return x >= 0 && x < NCOLS; };
-  return condition(a.first) && condition(a.second);
-}
-
-Par add(Par a, Par b) { return Par(a.first + b.first, a.second + b.second); }
 
 void bfs(std::array<std::array<char, NROWS>, NCOLS> &matrix, Par curr, Par prev,
          std::set<Par> &visited, Graph &g) {
@@ -165,6 +217,7 @@ int main() {
   std::cout << std::accumulate(graphs.begin(), graphs.end(), size_t(0), reducer)
             << std::endl;
 
+  std::cout << graphs[0].sides();
   file.close(); // Close the file
 
   return 0;
