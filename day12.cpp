@@ -11,8 +11,8 @@
 #include <stdexcept>
 #include <vector>
 
-#define NROWS 10
-#define NCOLS 10
+#define NROWS 140
+#define NCOLS 140
 
 using Par = std::pair<int, int>;
 
@@ -52,6 +52,7 @@ public:
     }
     return sum;
   }
+
   int sides() {
     auto filtered = vertices | std::views::filter([&](const auto &p) {
                       return adj_list[p].size() < 4;
@@ -103,23 +104,37 @@ public:
     long wall_number = 0;
     auto curr = Par(-10, -10);
     std::vector<Par> sides;
+    bool has_duplicate = false;
     for (const auto &par : intersections_x) {
       if (par != curr) {
         wall_number++;
         sides.push_back(par);
-        if (duplicates_x.contains(par))
-          wall_number++;
         curr = par;
+        has_duplicate = false;
+      }
+      if (duplicates_x.contains(par) && !has_duplicate) {
+        wall_number++;
+        has_duplicate = true;
+      } else if (has_duplicate) {
+        has_duplicate = duplicates_x.contains(par);
       }
       curr = add(curr, Par(0, 1));
     }
 
     curr = Par(-10, -10);
+    has_duplicate = false;
     for (const auto &par : intersections_y) {
       if (par != curr) {
         wall_number++;
         sides.push_back(par);
         curr = par;
+        has_duplicate = false;
+      }
+      if (duplicates_y.contains(par) && !has_duplicate) {
+        wall_number++;
+        has_duplicate = true;
+      } else if (has_duplicate) {
+        has_duplicate = duplicates_y.contains(par);
       }
       curr = add(curr, Par(1, 0));
     }
@@ -198,7 +213,7 @@ int main() {
   std::array<std::array<char, cols>, cols> matrix;
 
   // File path to the matrix file
-  std::string filePath = "input12_2.txt";
+  std::string filePath = "input12.txt";
 
   // Open the file
   std::ifstream file(filePath);
