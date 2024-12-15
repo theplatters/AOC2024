@@ -26,36 +26,10 @@ static const Par left_dir = Par(-1, 0);
 static const Par right_dir = Par(1, 0);
 
 class Graph {
-
   std::map<Par, std::set<Par>> adj_list;
   std::set<Par> vertices;
 
-public:
-  Graph() {
-    vertices = std::set<Par>();
-    adj_list = std::map<Par, std::set<Par>>();
-  }
-
-  void add_vertex(Par a) { vertices.insert(a); }
-  void add_edge(Par a, Par b) {
-
-    if (!vertices.contains(a) || !vertices.contains(b))
-      throw std::out_of_range("Vertices not in Graph");
-    adj_list[a].insert(b);
-    adj_list[b].insert(a);
-  }
-
-  size_t size() { return vertices.size(); }
-
-  int fences() {
-    if (vertices.size() == 1)
-      return 4;
-    int sum = 0;
-    for (const auto &x : adj_list) {
-      sum += 4 - x.second.size();
-    }
-    return sum;
-  }
+private:
   template <typename SetType>
   void bounds(Par &dir, SetType &intersections, std::set<Par> &duplicates) {
     if (!vertices.contains(dir)) {
@@ -88,6 +62,32 @@ public:
       curr = add(curr, dir);
     }
     return wall_number;
+  }
+
+public:
+  Graph() {
+    vertices = std::set<Par>();
+    adj_list = std::map<Par, std::set<Par>>();
+  }
+
+  void add_vertex(Par a) { vertices.insert(a); }
+  void add_edge(Par a, Par b) {
+    if (!vertices.contains(a) || !vertices.contains(b))
+      throw std::out_of_range("Vertices not in Graph");
+    adj_list[a].insert(b);
+    adj_list[b].insert(a);
+  }
+
+  size_t size() { return vertices.size(); }
+
+  int fences() {
+    if (vertices.size() == 1)
+      return 4;
+    int sum = 0;
+    for (const auto &x : adj_list) {
+      sum += 4 - x.second.size();
+    }
+    return sum;
   }
 
   int sides() {
