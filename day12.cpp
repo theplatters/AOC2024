@@ -1,4 +1,3 @@
-#include <algorithm>
 #include <array>
 #include <cstddef>
 #include <cstring>
@@ -6,7 +5,6 @@
 #include <iostream>
 #include <map>
 #include <numeric>
-#include <ranges>
 #include <set>
 #include <stdexcept>
 #include <vector>
@@ -22,7 +20,12 @@ bool inbounds(Par &a) {
   return condition(a.first) && condition(a.second);
 }
 
-struct Graph {
+static const Par up_dir = Par(0, -1);
+static const Par down_dir = Par(0, 1);
+static const Par left_dir = Par(-1, 0);
+static const Par right_dir = Par(1, 0);
+
+class Graph {
 
   std::map<Par, std::set<Par>> adj_list;
   std::set<Par> vertices;
@@ -43,6 +46,7 @@ public:
   }
 
   size_t size() { return vertices.size(); }
+
   int fences() {
     if (vertices.size() == 1)
       return 4;
@@ -52,11 +56,41 @@ public:
     }
     return sum;
   }
+  template <typename SetType>
+  void bounds(Par &dir, SetType &intersections, std::set<Par> &duplicates) {
+    if (!vertices.contains(dir)) {
+      if (intersections.contains(dir)) {
+        duplicates.insert(dir);
+      } else {
+        intersections.insert(dir);
+      }
+    }
+  }
+
+  template <typename SetType>
+  long calculateWalls(SetType &intersections, std::set<Par> &duplicates,
+                      Par dir) {
+    auto curr = Par(-10, -10);
+    long wall_number = 0;
+    bool has_duplicate = false;
+    for (const auto &par : intersections) {
+      if (par != curr) {
+        wall_number++;
+        curr = par;
+        has_duplicate = false;
+      }
+      if (duplicates.contains(par) && !has_duplicate) {
+        wall_number++;
+        has_duplicate = true;
+      } else if (has_duplicate) {
+        has_duplicate = duplicates.contains(par);
+      }
+      curr = add(curr, dir);
+    }
+    return wall_number;
+  }
 
   int sides() {
-    auto filtered = vertices | std::views::filter([&](const auto &p) {
-                      return adj_list[p].size() < 4;
-                    });
     auto cmp = [](const Par &left, const Par &right) {
       return (left.second < right.second) ||
              (left.second == right.second && left.first < right.first);
@@ -66,80 +100,22 @@ public:
 
     std::set<Par> duplicates_x;
     std::set<Par> duplicates_y;
-    for (const auto &p : filtered) {
-      auto up = add(p, Par(0, -1));
-      auto down = add(p, Par(0, 1));
-      auto left = add(p, Par(-1, 0));
-      auto right = add(p, Par(1, 0));
-      if (!vertices.contains(up)) {
-        if (intersections_y.contains(up)) {
-          duplicates_y.insert(up);
-        } else {
-          intersections_y.insert(up);
-        }
-      }
-      if (!vertices.contains(down)) {
-        if (intersections_y.contains(down)) {
-          duplicates_y.insert(down);
-        } else {
-          intersections_y.insert(down);
-        }
-      }
-      if (!vertices.contains(left)) {
-        if (intersections_x.contains(left)) {
-          duplicates_x.insert(left);
-        } else {
-          intersections_x.insert(left);
-        }
-      }
-      if (!vertices.contains(right)) {
-        if (intersections_x.contains(right)) {
-          duplicates_x.insert(right);
-        } else {
-          intersections_x.insert(right);
-        }
-      }
+
+    for (const auto &p : vertices) {
+      auto up = add(p, up_dir);
+      auto down = add(p, down_dir);
+      auto left = add(p, left_dir);
+      auto right = add(p, right_dir);
+
+      bounds(up, intersections_y, duplicates_y);
+      bounds(down, intersections_y, duplicates_y);
+      bounds(left, intersections_x, duplicates_x);
+      bounds(right, intersections_x, duplicates_x);
     }
 
-    long wall_number = 0;
-    auto curr = Par(-10, -10);
-    std::vector<Par> sides;
-    bool has_duplicate = false;
-    for (const auto &par : intersections_x) {
-      if (par != curr) {
-        wall_number++;
-        sides.push_back(par);
-        curr = par;
-        has_duplicate = false;
-      }
-      if (duplicates_x.contains(par) && !has_duplicate) {
-        wall_number++;
-        has_duplicate = true;
-      } else if (has_duplicate) {
-        has_duplicate = duplicates_x.contains(par);
-      }
-      curr = add(curr, Par(0, 1));
-    }
+    long wall_number = calculateWalls(intersections_x, duplicates_x, down_dir) +
+                       calculateWalls(intersections_y, duplicates_y, right_dir);
 
-    curr = Par(-10, -10);
-    has_duplicate = false;
-    for (const auto &par : intersections_y) {
-      if (par != curr) {
-        wall_number++;
-        sides.push_back(par);
-        curr = par;
-        has_duplicate = false;
-      }
-      if (duplicates_y.contains(par) && !has_duplicate) {
-        wall_number++;
-        has_duplicate = true;
-      } else if (has_duplicate) {
-        has_duplicate = duplicates_y.contains(par);
-      }
-      curr = add(curr, Par(1, 0));
-    }
-
-    std::cout << "Wall number: " << wall_number << "\n";
     return wall_number;
   }
 };
@@ -154,10 +130,10 @@ void bfs(std::array<std::array<char, NROWS>, NCOLS> &matrix, Par curr, Par prev,
   }
 
   visited.insert(curr);
-  auto up = add(curr, Par(0, -1));
-  auto down = add(curr, Par(0, 1));
-  auto left = add(curr, Par(-1, 0));
-  auto right = add(curr, Par(1, 0));
+  auto up = add(curr, up_dir);
+  auto down = add(curr, down_dir);
+  auto left = add(curr, left_dir);
+  auto right = add(curr, right_dir);
   if (inbounds(up) &&
       matrix[curr.second][curr.first] == matrix[up.second][up.first]) {
     bfs(matrix, up, curr, visited, g);
@@ -182,10 +158,10 @@ void bfs(std::array<std::array<char, NROWS>, NCOLS> &matrix, Par curr,
   g.add_vertex(curr);
   visited.insert(curr);
 
-  auto up = add(curr, Par(0, -1));
-  auto down = add(curr, Par(0, 1));
-  auto left = add(curr, Par(-1, 0));
-  auto right = add(curr, Par(1, 0));
+  auto up = add(curr, up_dir);
+  auto down = add(curr, down_dir);
+  auto left = add(curr, left_dir);
+  auto right = add(curr, right_dir);
   if (inbounds(up) &&
       matrix[curr.second][curr.first] == matrix[up.second][up.first]) {
     bfs(matrix, up, curr, visited, g);
