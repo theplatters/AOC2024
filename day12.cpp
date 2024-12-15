@@ -9,8 +9,8 @@
 #include <stdexcept>
 #include <vector>
 
-#define NROWS 140
-#define NCOLS 140
+#define NROWS 3
+#define NCOLS 3
 
 using Par = std::pair<int, int>;
 
@@ -120,63 +120,25 @@ public:
   }
 };
 
-void bfs(std::array<std::array<char, NROWS>, NCOLS> &matrix, Par curr, Par prev,
+void bfs(std::array<std::array<char, NROWS>, NCOLS> &matrix, Par curr,
          std::set<Par> &visited, Graph &g) {
 
-  g.add_vertex(curr);
-  g.add_edge(curr, prev);
   if (visited.contains(curr)) {
     return;
   }
 
   visited.insert(curr);
-  auto up = add(curr, up_dir);
-  auto down = add(curr, down_dir);
-  auto left = add(curr, left_dir);
-  auto right = add(curr, right_dir);
-  if (inbounds(up) &&
-      matrix[curr.second][curr.first] == matrix[up.second][up.first]) {
-    bfs(matrix, up, curr, visited, g);
-  }
-  if (inbounds(down) &&
-      matrix[curr.second][curr.first] == matrix[down.second][down.first]) {
-    bfs(matrix, down, curr, visited, g);
-  }
-  if (inbounds(left) &&
-      matrix[curr.second][curr.first] == matrix[left.second][left.first]) {
-    bfs(matrix, left, curr, visited, g);
-  }
-  if (inbounds(right) &&
-      matrix[curr.second][curr.first] == matrix[right.second][right.first]) {
-    bfs(matrix, right, curr, visited, g);
-  }
-}
 
-void bfs(std::array<std::array<char, NROWS>, NCOLS> &matrix, Par curr,
-         std::set<Par> &visited, Graph &g) {
+  std::array<Par, 4> directions = {add(curr, up_dir), add(curr, down_dir),
+                                   add(curr, left_dir), add(curr, right_dir)};
 
-  g.add_vertex(curr);
-  visited.insert(curr);
-
-  auto up = add(curr, up_dir);
-  auto down = add(curr, down_dir);
-  auto left = add(curr, left_dir);
-  auto right = add(curr, right_dir);
-  if (inbounds(up) &&
-      matrix[curr.second][curr.first] == matrix[up.second][up.first]) {
-    bfs(matrix, up, curr, visited, g);
-  }
-  if (inbounds(down) &&
-      matrix[curr.second][curr.first] == matrix[down.second][down.first]) {
-    bfs(matrix, down, curr, visited, g);
-  }
-  if (inbounds(left) &&
-      matrix[curr.second][curr.first] == matrix[left.second][left.first]) {
-    bfs(matrix, left, curr, visited, g);
-  }
-  if (inbounds(right) &&
-      matrix[curr.second][curr.first] == matrix[right.second][right.first]) {
-    bfs(matrix, right, curr, visited, g);
+  for (auto &dir : directions) {
+    if (inbounds(dir) &&
+        matrix[curr.second][curr.first] == matrix[dir.second][dir.first]) {
+      g.add_vertex(dir);
+      g.add_edge(curr, dir);
+      bfs(matrix, dir, visited, g);
+    }
   }
 }
 
@@ -189,7 +151,7 @@ int main() {
   std::array<std::array<char, cols>, cols> matrix;
 
   // File path to the matrix file
-  std::string filePath = "input12.txt";
+  std::string filePath = "input12_2.txt";
 
   // Open the file
   std::ifstream file(filePath);
@@ -215,9 +177,11 @@ int main() {
   for (int i = 0; i < NROWS; i++) {
     for (int j = 0; j < NCOLS; j++) {
       if (matrix[i][j] != '-') {
+        auto curr = Par(j, i);
         visited.clear();
         graphs.emplace_back();
-        bfs(matrix, Par(j, i), visited, graphs.back());
+        graphs.back().add_vertex(curr);
+        bfs(matrix, curr, visited, graphs.back());
         for (const auto &par : visited) {
           matrix[par.second][par.first] = '-';
         }
