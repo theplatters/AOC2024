@@ -11,8 +11,8 @@
 #include <stdexcept>
 #include <vector>
 
-#define NROWS 140
-#define NCOLS 140
+#define NROWS 10
+#define NCOLS 10
 
 using Par = std::pair<int, int>;
 
@@ -22,7 +22,7 @@ bool inbounds(Par &a) {
   return condition(a.first) && condition(a.second);
 }
 
-class Graph {
+struct Graph {
 
   std::map<Par, std::set<Par>> adj_list;
   std::set<Par> vertices;
@@ -52,56 +52,80 @@ public:
     }
     return sum;
   }
-
   int sides() {
-    std::set<Par> visited;
-    auto minimum = *vertices.begin();
-    auto maximum = *vertices.rbegin();
-    int side_number = 0;
-    std::vector<Par> intersections;
-    for (int i = minimum.first; i <= maximum.first; i++) {
-      auto filtered = vertices | std::views::filter([i](const auto &p) {
-                        return p.first == i;
-                      });
+    auto filtered = vertices | std::views::filter([&](const auto &p) {
+                      return adj_list[p].size() < 4;
+                    });
+    auto cmp = [](const Par &left, const Par &right) {
+      return (left.second < right.second) ||
+             (left.second == right.second && left.first < right.first);
+    };
+    std::set<Par> intersections_x;
+    std::set<Par, decltype(cmp)> intersections_y;
 
-      // Convert the filtered view to a vector
-      std::ranges::copy(filtered, std::inserter(visited, visited.end()));
-
-      for (const auto &p : visited) {
-        auto next = add(p, Par(0, 1));
-        auto prev = add(p, Par(0, -1));
-        if (!visited.contains(prev)) {
-          intersections.push_back(p);
-        }
-        if (!visited.contains(next)) {
-          intersections.push_back(next);
+    std::set<Par> duplicates_x;
+    std::set<Par> duplicates_y;
+    for (const auto &p : filtered) {
+      auto up = add(p, Par(0, -1));
+      auto down = add(p, Par(0, 1));
+      auto left = add(p, Par(-1, 0));
+      auto right = add(p, Par(1, 0));
+      if (!vertices.contains(up)) {
+        if (intersections_y.contains(up)) {
+          duplicates_y.insert(up);
+        } else {
+          intersections_y.insert(up);
         }
       }
-      visited.clear();
+      if (!vertices.contains(down)) {
+        if (intersections_y.contains(down)) {
+          duplicates_y.insert(down);
+        } else {
+          intersections_y.insert(down);
+        }
+      }
+      if (!vertices.contains(left)) {
+        if (intersections_x.contains(left)) {
+          duplicates_x.insert(left);
+        } else {
+          intersections_x.insert(left);
+        }
+      }
+      if (!vertices.contains(right)) {
+        if (intersections_x.contains(right)) {
+          duplicates_x.insert(right);
+        } else {
+          intersections_x.insert(right);
+        }
+      }
     }
 
-    std::sort(intersections.begin(), intersections.end(),
-              [](auto &left, auto &right) {
-                return left.second < right.second ||
-                       (left.second == right.second &&
-                        left.first < right.first);
-              });
-
+    long wall_number = 0;
     auto curr = Par(-10, -10);
     std::vector<Par> sides;
-    for (const auto &par : intersections) {
-      curr = add(curr, Par(1, 0));
+    for (const auto &par : intersections_x) {
       if (par != curr) {
+        wall_number++;
+        sides.push_back(par);
+        if (duplicates_x.contains(par))
+          wall_number++;
+        curr = par;
+      }
+      curr = add(curr, Par(0, 1));
+    }
+
+    curr = Par(-10, -10);
+    for (const auto &par : intersections_y) {
+      if (par != curr) {
+        wall_number++;
         sides.push_back(par);
         curr = par;
       }
+      curr = add(curr, Par(1, 0));
     }
 
-    for (const auto &side : sides) {
-      std::cout << side.first << " " << side.second << "\n";
-    }
-    // Print the results
-    return 0;
+    std::cout << "Wall number: " << wall_number << "\n";
+    return wall_number;
   }
 };
 
@@ -174,7 +198,7 @@ int main() {
   std::array<std::array<char, cols>, cols> matrix;
 
   // File path to the matrix file
-  std::string filePath = "input12.txt";
+  std::string filePath = "input12_2.txt";
 
   // Open the file
   std::ifstream file(filePath);
@@ -217,7 +241,14 @@ int main() {
   std::cout << std::accumulate(graphs.begin(), graphs.end(), size_t(0), reducer)
             << std::endl;
 
-  std::cout << graphs[0].sides();
+  auto reducer2 = [](size_t acc, auto &g) {
+    return acc + g.size() * g.sides();
+  };
+
+  std::cout << std::accumulate(graphs.begin(), graphs.end(), size_t(0),
+                               reducer2)
+            << std::endl;
+
   file.close(); // Close the file
 
   return 0;
