@@ -9,8 +9,9 @@
 #include <stdexcept>
 #include <vector>
 
-#define NROWS 3
-#define NCOLS 3
+#define NROWS 140
+#define NCOLS 140
+#define INPUT_FILE "input12.txt"
 
 using Par = std::pair<int, int>;
 
@@ -46,18 +47,18 @@ private:
                       Par dir) {
     auto curr = Par(-10, -10);
     long wall_number = 0;
-    bool has_duplicate = false;
+    bool duplicate_wall = false;
     for (const auto &par : intersections) {
       if (par != curr) {
         wall_number++;
         curr = par;
-        has_duplicate = false;
+        duplicate_wall = false;
       }
-      if (duplicates.contains(par) && !has_duplicate) {
+      if (duplicates.contains(par) && !duplicate_wall) {
         wall_number++;
-        has_duplicate = true;
-      } else if (has_duplicate) {
-        has_duplicate = duplicates.contains(par);
+        duplicate_wall = true;
+      } else if (duplicate_wall) {
+        duplicate_wall = duplicates.contains(par);
       }
       curr = add(curr, dir);
     }
@@ -151,7 +152,7 @@ int main() {
   std::array<std::array<char, cols>, cols> matrix;
 
   // File path to the matrix file
-  std::string filePath = "input12_2.txt";
+  std::string filePath = INPUT_FILE;
 
   // Open the file
   std::ifstream file(filePath);
