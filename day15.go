@@ -163,7 +163,7 @@ func findYSegment(mapOfFactory [][]byte, current IntPair, direction IntPair, cur
 			right:    nil,
 		}
 	}
-	if current.First <= 0 || current.First >= cols || current.Second <= 0 || current.Second >= rows {
+	if current.First < 0 || current.First >= cols || current.Second < 0 || current.Second >= rows {
 		return
 	}
 
@@ -292,14 +292,6 @@ func moveRobot2(idx IntPair, direction IntPair, segment *Node, mapOfFactory [][]
 	return idx.Add(direction)
 }
 
-func gpsLocation(packages []IntPair) int {
-	acc := 0
-	for _, pac := range packages {
-		acc += (100 * pac.Second) + pac.First
-	}
-	return acc
-}
-
 func makeBigMap(mapOfFactory [][]byte) [][]byte {
 	bigMap := make([][]byte, len(mapOfFactory))
 
@@ -323,7 +315,7 @@ func makeBigMap(mapOfFactory [][]byte) [][]byte {
 }
 
 func main() {
-	content, err := os.ReadFile("input15_2.txt")
+	content, err := os.ReadFile("input15.txt")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -351,8 +343,6 @@ func main() {
 	packages := GPSLocation(mapOfFactory, 'O')
 
 	idx, found = findCharIndex(bigMap, '@')
-
-	idx, found = findCharIndex(bigMap, '@')
 	if !found {
 		log.Fatal("Robot not found")
 	}
@@ -361,7 +351,7 @@ func main() {
 
 			segment := findSegment2(direction, idx, bigMap)
 			idx = moveRobot2(idx, dirMap[direction], &segment, bigMap)
-
+			fmt.Printf("%c \n", direction)
 			for _, rows := range bigMap {
 				fmt.Println(string(rows))
 			}
