@@ -10,6 +10,15 @@ local function read_file(path)
 	return content
 end
 
+function contains(tbl, value)
+	for _, v in pairs(tbl) do
+		if v == value then
+			return true
+		end
+	end
+	return false
+end
+
 local function to_key(x, y)
 	return x .. "," .. y
 end
@@ -73,22 +82,37 @@ function List.popright(list)
 	return value
 end
 
+local function unique(tbl)
+	local seen = {}
+	local result = {}
+
+	for _, value in ipairs(tbl) do
+		if not seen[value] then
+			seen[value] = true
+			table.insert(result, value)
+		end
+	end
+
+	return result
+end
+
 local function dijkstra(graph, source)
 	local dist = {} -- Table to store the shortest distances from the source
 	local visited = {} -- Table to mark visited nodes
 	local previous = {} -- Table to store the path
+	local unique_tiles = {}
 
 	-- Initialize distances and visited status
 	for node, _ in pairs(graph) do
+		unique_tiles[node] = {}
 		dist[node] = math.huge -- Set initial distance to infinity
 		visited[node] = false -- Mark all nodes as unvisited
 	end
 	dist[source] = 0 -- Distance to the source is 0
-
 	local l = List.new()
-	List.pushleft(l, source)
+	List.pushright(l, source)
 	while not List.isempty(l) do
-		local currentNode = List.popright(l)
+		local currentNode = List.popleft(l)
 
 		visited[currentNode] = true
 		for _, neighbor in pairs(graph[currentNode]) do
@@ -100,17 +124,23 @@ local function dijkstra(graph, source)
 					add(from_key(currentNode), subtract(from_key(currentNode), from_key(previous[currentNode])))
 				)
 			then
-				weight = 1000
+				weight = 1001
 			end
 			local altDist = dist[currentNode] + weight
-			if not visited[neighbor] or altDist < dist[neighbor] then
+			if not visited[neighbor] or altDist <= dist[neighbor] then
+				if not visited[neighbor] or altDist == dist[neighbor] then
+					table.insert(unique_tiles[neighbor], currentNode)
+				else
+					unique_tiles[neighbor] = { currentNode }
+				end
+				visited[neighbor] = true
 				dist[neighbor] = altDist
 				previous[neighbor] = currentNode
-				List.pushleft(l, neighbor)
+				List.pushright(l, neighbor)
 			end
 		end
 	end
-	return dist, previous
+	return dist, previous, unique_tiles
 end
 
 local function maze_to_graph(maze)
@@ -151,6 +181,26 @@ local function maze_to_graph(maze)
 
 	return graph, start, endNode
 end
+
+local function find_unique_tiles(all_paths, startNode, endNode)
+	local visited = {}
+	local counter = 1
+	local l = List.new()
+	List.pushleft(l, endNode)
+	while not List.isempty(l) do
+		local curr = List.popright(l)
+		print(curr)
+		for _, node in pairs(unique(all_paths[curr])) do
+			if not contains(visited, node) then
+				counter = counter + 1
+				table.insert(visited, node)
+				List.pushleft(l, node)
+			end
+		end
+	end
+	return counter
+end
+
 local content = read_file("input16.txt")
 local maze = {}
 
@@ -159,6 +209,5 @@ for line in string.gmatch(content, "([^\n]*)\n?") do
 end
 local graph, start, endNode = maze_to_graph(maze)
 
-local distances, paths = dijkstra(graph, start)
-
-print(distances[endNode])
+local distances, paths, all_paths = dijkstra(graph, start)
+print(find_unique_tiles(all_paths, start, endNode))

@@ -36,7 +36,6 @@ fn main() {
             }
         }
     }
-
     println!("Result {:?}", move_steps(&positions, &velocities, 100));
 }
 
